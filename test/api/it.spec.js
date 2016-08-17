@@ -243,4 +243,33 @@ describe('expect.it', function () {
     it('should not fail when the first clause in an or group specifies an assertion that is not defined for the given arguments', function () {
         expect([ false, 'foo', 'bar' ], 'to have items satisfying', expect.it('to be false').or('to be a string'));
     });
+
+    describe('when passed a function', function () {
+        it('should succeed', function () {
+            expect.it(function (value) {
+                expect(value, 'to equal', 'foo');
+            })('foo');
+        });
+
+        it('should fail with a diff', function () {
+            expect(function () {
+                expect.it(function (value) {
+                    expect(value, 'to equal', 'bar');
+                })('foo');
+            }, 'to throw',
+                "expected 'foo' to equal 'bar'\n" +
+                "\n" +
+                "-foo\n" +
+                "+bar"
+            );
+        });
+
+        it('should fail when passed more than two arguments', function () {
+            expect(function () {
+                expect.it(function (value) {
+                    expect(value, 'to equal', 'bar');
+                }, 'yadda')('foo');
+            }, 'to throw', 'expect.it(<function>) does not accept additional arguments');
+        });
+    });
 });
