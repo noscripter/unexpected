@@ -1681,26 +1681,6 @@ describe('to satisfy assertion', function () {
         });
     });
 
-    // Debatable:
-    describe('when an unpresent value to is satisfied against a function', function () {
-        it('should allow an unpresent value to be satisfied against a non-expect.it function', function () {
-            expect({}, 'to satisfy', { foo: function () {}});
-        });
-
-        it('should fail when the function throws', function () {
-            expect(function () {
-                expect({}, 'to satisfy', { foo: function (value) { expect(value, 'to be a string'); }});
-            }, 'to throw',
-                "expected {}\n" +
-                "to satisfy { foo: function (value) { expect(value, 'to be a string'); } }\n" +
-                "\n" +
-                "{\n" +
-                "  // missing: foo: should be a string\n" +
-                "}"
-            );
-        });
-    });
-
     describe('when an unpresent value to is satisfied against an expect.it', function () {
         it('should succeed', function () {
             expect({}, 'to satisfy', { foo: expect.it('to be undefined') });
@@ -1719,17 +1699,37 @@ describe('to satisfy assertion', function () {
         });
     });
 
-    it('should not break when the assertion fails and there is a fulfilled function in the RHS', function () {
-        expect(function () {
-            expect({}, 'to satisfy', { bar: 123, foo: function () {}});
-        }, 'to throw',
-            "expected {} to satisfy { bar: 123, foo: function () {} }\n" +
-            "\n" +
-            "{\n" +
-            "  // missing bar: 123\n" +
-            "  foo:\n" + // FIXME: Come up with something better
-            "}"
-        );
+    describe('with a function in the RHS object', function () {
+        it('should render a diff when the function is in the LHS at the correct position', function () {
+            function myFunction() {}
+            expect(function () {
+                expect({foo: myFunction}, 'to satisfy', { bar: 123, foo: myFunction});
+            }, 'to throw',
+                "expected { foo: function myFunction() {} }\n" +
+                "to satisfy { bar: 123, foo: function myFunction() {} }\n" +
+                "\n" +
+                "{\n" +
+                "  foo: function myFunction() {}\n" +
+                "  // missing bar: 123\n" +
+                "}"
+            );
+        });
+
+        it('should render a diff when the function differs', function () {
+            function myFunction() {}
+            function myOtherFunction() {}
+            expect(function () {
+                expect({foo: myFunction}, 'to satisfy', { foo: myOtherFunction});
+            }, 'to throw',
+                "expected { foo: function myFunction() {} }\n" +
+                "to satisfy { foo: function myOtherFunction() {} }\n" +
+                "\n" +
+                "{\n" +
+                "  foo: function myFunction() {} // expected { foo: function myFunction() {} }\n" +
+                "                                // to satisfy { foo: function myOtherFunction() {} }\n" +
+                "}"
+            );
+        });
     });
 
     describe('when matching the constructor property of an object', function () {
