@@ -24,6 +24,18 @@ describe('#child', function () {
         childExpect('foo', 'to foo');
     });
 
+    it('should have access to identically named assertions with different type signatures in child and parent', function () {
+        childExpect.addAssertion('<string> to foo', function (expect, subject) {
+            expect.errorMode = 'nested';
+            expect(subject, 'to equal', 'foo');
+            expect(subject.length, 'to foo');
+        });
+        parentExpect.addAssertion('<number> to foo', function (expect, subject) {
+            expect(subject, 'to equal', 3);
+        });
+        childExpect('foo', 'to foo');
+    });
+
     it('should have access to styles defined in the parent after the child was created', function () {
         parentExpect.addStyle('yadda', function () {
             this.text('yaddafoo');
