@@ -11,7 +11,7 @@ describe('exportAssertion', function () {
         childExpect.exportAssertion('foo', function () {})
             .exportAssertion('bar', function () {});
 
-        expect(childExpect.assertions, 'to have keys',
+        expect(parentExpect.assertions, 'to have keys',
                'foo',
                'bar');
     });
@@ -24,16 +24,31 @@ describe('exportAssertion', function () {
         parentExpect('foo', 'to foo');
     });
 
-    it('binds the assertion to the child expect', function () {
+    it('binds the assertion to the child expect so custom types are available', function () {
         childExpect.addType({
             name: 'yadda',
             identify: function (obj) {
                 return /^yadda/.test(obj);
+            },
+            inspect: function (value, depth, output, inspect) {
+                output.text('>>').text(value).text('<<');
             }
         });
-        childExpect.exportAssertion('<yadda> to foo', function (expect, subject) {
+        childExpect.addAssertion('<yadda> to foo', function (expect, subject) {
             expect(subject, 'to contain', 'foo');
         });
-        parentExpect('yaddafoo', 'to foo');
+        childExpect.exportAssertion('<string> to be silly', function (expect, subject) {
+            expect(subject, 'to foo');
+        });
+        parentExpect('yaddafoo', 'to be silly');
+
+        expect(function () {
+            parentExpect('yaddafo', 'to be silly');
+        }, 'to throw',
+            'expected >>yaddafo<< to be silly\n' +
+            '\n' +
+            'yaddafo\n' +
+            '     ^^'
+        );
     });
 });
